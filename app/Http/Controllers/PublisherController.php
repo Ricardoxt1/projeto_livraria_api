@@ -8,80 +8,97 @@ use Illuminate\Http\Response;
 
 class PublisherController extends Controller
 {
+    private $publisher;
+
     /**
-     * Display a listing of the resource.
-     * @param Publisher $publisher
-     * @return Response
+     * Constructs a new instance of the class.
+     * @param Publisher $publisher The publisher object.
      */
-    public function index(Publisher $publisher)
+    public function __construct(Publisher $publisher)
     {
-        $publishers = $publisher->all();
-        return view('app.publisher.index', [
-            'title' => 'Listagem de editoras', 'publishers' => $publishers
-        ]);
+        $this->publisher = $publisher;
     }
 
     /**
-     * Show the form for creating a new resource.
-     * @param Publisher $publisher
+     * Display a listing of the resource.
      * @return Response
      */
-    public function create(Publisher $publisher)
+    public function index()
     {
-        return view('app.publisher.create', [
-            'title' => 'Cadastro de editora', 'publisher' => $publisher
-        ]);
+        $publishers = $this->publisher->all();
+        return response()->json($publishers, 200, ['msg' => 'Recurso listado com sucesso']);
     }
 
     /**
      * Store a newly created resource in storage.
-     * @param Publisher $publisher
      * @param Request  $request
      * @return Response
      */
-    public function store(Request $request, Publisher $publisher)
+    public function store(Request $request)
     {
-        $publisher->create($request->all());
-        return redirect()->route('publisher.index');
+        $request->validate($this->publisher->rules(), $this->publisher->feedback());
+        $publisher = $this->publisher->create($request->all());
+        return response()->json($publisher, 201, ['msg' => 'Recurso criado com sucesso']);
     }
 
     /**
-     * Show the form for editing the specified resource.
-     *
-     * @param Publisher $publisher
+     * Display the specified resource.
+     * @param Integer $id
      * @return Response
      */
-    public function edit(Publisher $publisher)
+    public function show($id)
     {
-        return view('app.publisher.create', [
-            'title' => 'Editar editora', 'publisher' => $publisher
-        ]);
+        $publishers = $this->publisher->find($id);
+        if ($publishers === null) {
+            return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
+        }
+
+        return response()->json($publishers, 200);
     }
 
     /**
      * Update the specified resource in storage.
-     *
      * @param Request  $request
-     * @param Publisher $publisher
+     * @param Integer $id
      * @return Response
      */
-    public function update(Request $request, Publisher $publisher)
+    public function update(Request $request, $id)
     {
+   
+        $publisher = $this->publisher->find($id);
         
-        $publisher->update($request->all());
-        return redirect()->route('publisher.index', ['publishers' => $publisher]);
+        if ($publisher === null) {
+            return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
+        }
+
+        if ($request->method() === 'PATCH') {
+            $publisher->update($request->only($this->publisher->fillable));
+        } else {
+            $request->validate($this->publisher->rules(), $this->publisher->feedback());
+            $publisher->update($request->all());
+        }
+       
+        return response()->json($publisher, 200, ['msg' => 'Recurso atualizado com sucesso']);
     }
 
     /**
      * Remove the specified resource from storage.
-     *
-     * @param Publisher $publisher
+     * @param Integer $id
      * @return Response
      */
-    public function destroy(Publisher $publisher)
+    public function destroy($id)
     {
-        
+        $publisher = $this->publisher->find($id);
+        if ($publisher === null) {
+            return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
+        }
+
+        $associated = $publisher->books()->exists();
+        if ($associated) {
+            return response()->json(['erro' => 'Impossível realizar a exclusão. O recurso está associado ao(s) livro(s).'], 400);
+        }
+
         $publisher->delete();
-        return redirect()->route('publisher.index');
+        return response()->json(['msg' => 'Recurso excuído com sucesso'], 200);
     }
 }

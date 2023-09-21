@@ -36,7 +36,4 @@ class Publisher extends Model
         return $this->hasMany(Book::class);
     }
 
-    public function rentals(){
-        return $this->hasMany(Rental::class);
-    }
 }

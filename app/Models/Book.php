@@ -19,7 +19,8 @@ class Book extends Model
             'library_id' => 'required|exists:library,id',
             'titule' => 'required|min:3',
             'page' => 'required|integer',
-            'realese_date' => 'required|year',
+            'realese_date' => 'required|digits:4',
+            'image' => 'required|image|mimes:jpeg,jpg,png'
         ];
     }
 
@@ -31,7 +32,8 @@ class Book extends Model
             'library_id.exists' => 'A biblioteca informada não existe',
             'titule.min' => 'O campo título deve ter no mínimo 3 caracteres',
             'page.integer' => 'O campo página deve ser um número inteiro',
-            'realese_date.year' => 'O campo data de publicação deve ser um ano válido',
+            'realese_date.digits' => 'O campo data de publicação deve ser um ano válido',
+            'image.image' => 'O campo imagem deve ser uma imagem'
         ];
     }
 

@@ -3,97 +3,131 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
-use App\Models\Author;
-use App\Models\Library;
-use App\Models\Publisher;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
+
 
 class BookController extends Controller
 {
+    private $book;
+
     /**
-     * Display a listing of the resource.
-     * @param Book $book
-     * @return Response
+     * Create a new instance of the class.
+     * @param Book $book The book object to be assigned to the instance.
      */
-    public function index(Book $book)
+    public function __construct(Book $book)
     {
-        $books = $book->all();
-        return view('app.book.index', [
-            'title' => 'Listagem de livros', 'books' => $books
-        ]);
+        $this->book = $book;
     }
 
     /**
-     * Show the form for creating a new resource.
-     * @param Book $book
-     * @param Author $author
-     * @param Library $library
-     * @param Publisher $publisher
+     * Display a listing of the resource.
      * @return Response
      */
-    public function create(Book $book, Author $author, Library $library, Publisher $publisher)
+    public function index()
     {
-        $authors = $author->all();
-        $libraries = $library->all();
-        $publisher = $publisher->all();
-        return view('app.book.create', [
-            'title' => 'Adicionar livro', 'book' => $book, 'authors' => $authors, 'libraries' => $libraries, 'publishers' => $publisher
-        ]);
+        $book = $this->book->all();
+        return response()->json($book, 200, ['msg' => 'Recurso listado com sucesso.']);
     }
 
     /**
      * Store a newly created resource in storage.
-     * @param Book $book
      * @param Request  $request
      * @return Response
      */
-    public function store(Request $request, Book $book)
+    public function store(Request $request)
     {
-        $book->create($request->all());
-        return redirect()->route('book.index', ['books' => $book]);
+        $request->validate($this->book->rules(), $this->book->feedback());
+        $image = $request->file('image');
+        $image_urn = $image->store('books', 'public');
+
+        $book = $this->book->create([
+            'author_id' => $request->input('author_id'),
+            'publisher_id' => $request->input('publisher_id'),
+            'library_id' => $request->input('library_id'),
+            'titule' => $request->input('titule'),
+            'page' => $request->input('page'),
+            'realese_date' => $request->input('realese_date'),
+            'image' => $image_urn
+        ]);
+        return response()->json($book, 201, ['msg' => 'Recurso criado com sucesso.']);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     * @param Book $book
-     * @param Author $author
-     * @param Library $library
-     * @param Publisher $publisher
+        /**
+     * Display the specified resource.
+     * @param  Integer $id
      * @return Response
      */
-    public function edit(Book $book, Author $author, Library $library, Publisher $publisher)
+    public function show(int $id)
     {
-        $authors = $author->all();
-        $libraries = $library->all();
-        $publishers = $publisher->all();
-        return view('app.book.create', [
-            'title' => 'Editar livro', 'book' => $book, 'authors' => $authors, 'libraries' => $libraries, 'publishers' => $publishers
-        ]);
+        $book = $this->book->find($id);
+        if ($book === null) {
+            return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
+        }
+
+        return response()->json($book, 200);
     }
 
     /**
      * Update the specified resource in storage.
      *
      * @param Request  $request
-     * @param Book  $book
+     * @param Integer $id
+     * @param Storage $storage
      * @return Response
      */
-    public function update(Request $request, Book $book)
+    public function update(Request $request, Storage $storage, int $id)
     {
-        $book->update($request->all());
-        return redirect()->route('book.index', ['books' => $book]);
+        $book = $this->book->find($id);
+        if ($book === null) {
+            return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
+        }
+
+        
+        if ($request->method() === 'PATCH') {
+            $book->update($request->only($this->book->fillable));
+        } else {
+            $request->validate($this->book->rules(), $this->book->feedback());
+            $book->update($request->all());
+        }
+        
+        if ($request->file('image')) {
+            $storage::disk('public')->delete($book->image);
+        }
+        
+        $image = $request->file('image');
+        $image_urn = $image->store('books', 'public');
+
+        $book->update([
+            'image' => $image_urn
+        ]);
+
+        return response()->json($book, 200, ['msg' => 'Recurso atualizado com sucesso.']);
     }
 
     /**
      * Remove the specified resource from storage.
-     *
-     * @param Book  $book
+     * @param Integer $id
+     * @param Storage $storage
      * @return Response
      */
-    public function destroy(Book $book)
+    public function destroy(Storage $storage, int $id)
     {
+        $book = $this->book->find($id);
+
+        if ($book === null) {
+            return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
+        }
+
+        $associated = $book->rentals()->exists();
+
+        if ($associated) {
+            return response()->json(['erro' => 'Impossível realizar a exclusão. O livro está associado a alugueis.'], 400);
+        }
+
+        $storage::disk('public')->delete($book->image);
         $book->delete();
-        return redirect()->route('book.index');
+        return response()->json(['msg' => 'Recurso excluído com sucesso.'], 200);
     }
 }

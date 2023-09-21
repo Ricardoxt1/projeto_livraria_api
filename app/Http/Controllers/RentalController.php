@@ -3,96 +3,99 @@
 namespace App\Http\Controllers;
 
 use App\Models\Rental;
-use App\Models\Book;
-use App\Models\Customer;
-use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class RentalController extends Controller
 {
+    private $rental;
+
+    /**
+     * Constructs a new instance of the class.
+     * @param Rental $rental The rental object.
+     */
+    public function __construct(Rental $rental)
+    {
+        $this->rental = $rental;
+    }
+
     /**
      * Display a listing of the resource.
      * @param Rental $rental
      * @return Response
      */
-    public function index(Rental $rental)
+    public function index()
     {
-        $rentals = $rental->all();
-        return view('app.rental.index', [
-            'title' => 'Listagem de alugueis', 'rentals' => $rentals
-        ]);
+        $rentals = $this->rental->all();
+        return response()->json($rentals, 200, ['msg' => 'Recurso listado com sucesso.']);
     }
 
     /**
-     * Show the form for creating a new rental.
+     * Store the form for creating a new rental.
      * @param Rental $rental
-     * @param Book $book
-     * @param Customer $customer
-     * @param Employee $employee
+     * @param Request $request
      * @return Response
      */
-    public function create(Rental $rental, Book $book, Customer $customer, Employee $employee)
+    public function store(Request $request)
     {
-        $books = $book->all();
-        $customers = $customer->all();
-        $employees = $employee->all();
-        return view('app.rental.create', [
-            'title' => 'Cadastro de aluguel', 'rental' => $rental, 'books' => $books, 'customers' => $customers, 'employees' => $employees
-        ]);
+        $request->validate($this->rental->rules(), $this->rental->feedback());
+        $rental = $this->rental->create($request->all());
+
+        return response()->json($rental, 201, ['msg' => 'Recurso cadastrado com sucesso.']);
     }
 
     /**
-     * Store a newly created resource in storage.
-     * @param  \App\Models\Rental  $rental
-     * @param  \Illuminate\Http\Request  $request
+     * Display the specified resource.
+     * @param  Integer $id
      * @return Response
      */
-    public function store(Request $request, Rental $rental)
+    public function show($id)
     {
-        $rental->create($request->all());
-        return redirect()->route('rental.index', ['rentals' => $rental]);
-    }
+        $rental = $this->rental->find($id);
+        if ($rental === null) {
+            return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
+        }
 
-    /**
-     * Show the form for editing the specified resource.
-     * @param Rental $rental
-     * @param Book $book
-     * @param Customer $customer
-     * @param Employee $employee
-     * @return Response
-     */
-    public function edit(Rental $rental, Book $book, Customer $customer, Employee $employee)
-    {
-        $books = $book->all();
-        $customers = $customer->all();
-        $employees = $employee->all();
-        return view('app.rental.create', [
-            'title' => 'Editar aluguel', 'rental' => $rental, 'books' => $books, 'customers' => $customers, 'employees' => $employees
-        ]);
+        return response()->json($rental, 200, ['msg' => 'Recurso listado com sucesso.']);
     }
 
     /**
      * Update the specified resource in storage.
      * @param Request  $request
-     * @param Rental  $rental
+     * @param Integer $id
      * @return Response
      */
-    public function update(Request $request, Rental $rental)
+    public function update(Request $request, $id)
     {
-        $rental->update($request->all());
-        return redirect()->route('rental.index', ['rentals' => $rental]);
+        $rental = $this->rental->find($id);
+
+        if ($rental === null) {
+            return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
+        }
+
+        if ($request->method() === 'PATCH') {
+            $rental->update($request->only($this->rental->fillable));
+        } else {
+            $request->validate($this->rental->rules(), $this->rental->feedback());
+            $rental->update($request->all());
+        }
+        
+        return response()->json($rental, 200, ['msg' => 'Recurso atualizado com sucesso.']);
     }
 
     /**
      * Remove the specified resource from storage.
-     *
-     * @param Rental  $rental
+     * @param Integer $id
      * @return Response
      */
-    public function destroy(Rental $rental)
+    public function destroy($id)
     {
+        $rental = $this->rental->find($id);
+        if ($rental === null) {
+            return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
+        }
+
         $rental->delete();
-        return redirect()->route('rental.index');
+        return response()->json(['msg' => 'Recurso removido com sucesso.'], 200);
     }
 }

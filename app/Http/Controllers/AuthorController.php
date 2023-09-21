@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Rental;
 use App\Models\Author;
-use App\Models\Book;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -32,18 +30,6 @@ class AuthorController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     * @param Author $author
-     * @return  Response
-     */
-    public function create(Author $author)
-    {
-        return view('app.author.create', [
-            'title' => 'Cadastro de autores', 'author' => $author
-        ]);
-    }
-
-    /**
      * Store a newly created resource in storage.
      * @param Author $author
      * @param  Request  $request
@@ -63,7 +49,7 @@ class AuthorController extends Controller
      * @param  Integer $id
      * @return Response
      */
-    public function show($id)
+    public function show(int $id)
     {
         $author = $this->author->find($id);
         if ($author === null) {
@@ -71,17 +57,6 @@ class AuthorController extends Controller
         }
 
         return response()->json($author, 200);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param Author  $author
-     * @return Response
-     */
-    public function edit(Author $author, Request $request)
-    {
-        return view('app.author.create', ['title' => 'Editar autor(a)', 'author' => $author, 'request' => $request]);
     }
 
     /**
@@ -93,21 +68,22 @@ class AuthorController extends Controller
      */
     public function update(Request $request, Author $author)
     {
-        $author->update([
-            'name' => $request->name
-        ]);
-
+        if ($request->method() === 'PATCH') {
+            $author->update($request->only($this->author->fillable));
+        } else {
+            $request->validate($this->author->rules(), $this->author->feedback());
+            $author->update($request->all());
+        }
+        
         return response()->json($author, 200, ['msg' => 'Autor(a) atualizado com sucesso']);
     }
 
     /**
      * Remove the specified resource from storage.
-     * @param Book $book
-     * @param Rental $rental
      * @param Integer  $id
      * @return Response
      */
-    public function destroy($id)
+    public function destroy(int $id)
     {
         $author = $this->author->find($id);
 
@@ -119,9 +95,8 @@ class AuthorController extends Controller
         $associated = $author->books()->exists();
 
         if ($associated) {
-            return response()->json(['erro' => 'Impossível realizar a exclusão. O autor está associado a livros ou aluguéis.'], 400);
+            return response()->json(['erro' => 'Impossível realizar a exclusão. O autor está associado a livros.'], 400);
         }
-
 
         $author->delete();
         return response()->json(['msg' => 'Recurso excluído com sucesso'], 200);

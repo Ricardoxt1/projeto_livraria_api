@@ -9,7 +9,6 @@ use App\Models\RegisterClient;
 
 class RegisterController extends Controller
 {
-    //
     /**
      * Display a listing of the resource.
      * @return Response

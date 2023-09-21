@@ -3,87 +3,103 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
-use App\Models\Library;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class EmployeeController extends Controller
 {
+    private $employee;
+
     /**
-     * Display a listing of the resource.
-     * @param Employee $employee
-     * @param Library $library
-     * @return Response
+     * Constructs a new instance of the class.
+     *
+     * @param Employee $employee The employee object.
      */
-    public function index(Employee $employee, Library $library)
+    public function __construct(Employee $employee)
     {
-        $employees = $employee->all();
-        $libraries = $library->all();
-        return view('app.employee.index', [
-            'title' => 'Listagem de funcionários(a)', 'employees' => $employees, 'libraries' => $libraries
-        ]);
+        $this->employee = $employee;
     }
 
     /**
-     * Show the form for creating a new resource.
-     * @param Employee $employee
-     * @param Library $library
+     * Display a listing of the resource.
      * @return Response
      */
-    public function create(Employee $employee, Library $library)
+    public function index()
     {
-        $libraries = $library->all();
-        return view('app.employee.create', [
-            'title' => 'Cadastro de funcionário(a)', 'employee' => $employee, 'libraries' => $libraries
-        ]);
+        $employees = $this->employee->all();
+        return response()->json($employees, 200, ['msg' => 'Recurso listado com sucesso']);
     }
 
     /**
      * Store a newly created resource in storage.
-     * @param Employee $employee
-     * @param Request $request
+     * @param  Request  $request
      * @return Response
      */
-    public function store(Request $request, Employee $employee)
+    public function store(Request $request)
     {
-        $employee->create($request->all());
-        return redirect()->route('employee.index');
+        $request->validate($this->employee->rules(), $this->employee->feedback());
+        $employees = $this->employee->create($request->all());
+
+        return response()->json($employees, 201);
     }
 
     /**
-     * Show the form for editing the specified resource.
-     * @param Library  $library
-     * @param Employee  $employee
+     * Display the specified resource.
+     * @param  Integer $id
      * @return Response
      */
-    public function edit(Employee $employee, Library $library)
+    public function show(int $id)
     {
-        $libraries = $library->all();
-        return view('app.employee.create', [
-            'title' => 'Editar funcionário(a)', 'employee' => $employee, 'libraries' => $libraries
-        ]);
+        $employee = $this->employee->find($id);
+        if ($employee === null) {
+            return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
+        }
+
+        return response()->json($employee, 200);
     }
 
     /**
      * Update the specified resource in storage.
      * @param Request $request
-     * @param Employee  $employee
+     * @param Integer $id
      * @return Response
      */
-    public function update(Request $request, Employee $employee)
+    public function update(Request $request, int $id)
     {
-        $employee->update($request->all());
-        return redirect()->route('employee.index', ['employees' => $employee]);
+        $employee = $this->employee->find($id);
+        if ($employee === null) {
+            return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
+        }
+
+        if ($request->method() === 'PATCH') {
+            $employee->update($request->only($this->employee->fillable));
+        } else {
+            $request->validate($this->employee->rules(), $this->employee->feedback());
+            $employee->update($request->all());
+        }
+
+        return response()->json($employee, 200, ['msg' => 'Recurso atualizado com sucesso']);
     }
 
     /**
      * Remove the specified resource from storage.
-     * @param Employee  $employee
+     * @param Integer $id
      * @return Response
      */
-    public function destroy(Employee $employee)
+    public function destroy(int $id)
     {
+        $employee = $this->employee->find($id);
+        if ($employee === null) {
+            return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
+        }
+
+        $associated = $employee->rentals()->exists();
+        if ($associated) {
+            return response()->json(['erro' => 'Impossível realizar a exclusão. O recurso está associado a alugueis.'], 400);
+        }
+
         $employee->delete();
-        return redirect()->route('employee.index');
+
+        return response()->json(['msg' => 'Recurso excuído com sucesso'], 200);
     }
 }

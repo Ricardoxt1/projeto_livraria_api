@@ -8,75 +8,92 @@ use Illuminate\Http\Response;
 
 class CustomerController extends Controller
 {
+    private $customer;
+
     /**
-     * Display a listing of the resource.
-     * @param  Customer $customer
-     * @return Response
+     * Initializes a new instance of the Customer class.
+     *
+     * @param Customer $customer The customer object.
      */
-    public function index(Customer $customer)
+    public function __construct(Customer $customer)
     {
-        $customers = $customer->all();
-        return view('app.customer.index', [
-            'title' => 'Listagem de usuario', 'customers' => $customers
-        ]);
+        $this->customer = $customer;
     }
 
     /**
-     * Show the form for creating a new resource.
-     * @param  Customer $customer
+     * Display a listing of the resource.
      * @return Response
      */
-    public function create(Customer $customer)
+    public function index()
     {
-        return view('app.customer.create', [
-            'title' => 'Cadastro de usuario', 'customer' => $customer
-        ]);
+        $customers = $this->customer->all();
+        return response()->json($customers, 200, ['msg' => 'Recurso listado com sucesso']);
     }
+
 
     /**
      * Store a newly created resource in storage.
-     * @param  Customer $customer
      * @return Response  $request
      * @return Response
      */
-    public function store(Request $request, Customer $customer)
+    public function store(Request $request)
     {
-        $customer->create($request->all());
-        return redirect()->route('customer.index');
+        $request->validate($this->customer->rules(), $this->customer->feedback());
+        $customers = $this->customer->create($request->all());
+        return response()->json($customers, 201, ['msg' => 'Recurso criado com sucesso']);
     }
 
     /**
-     * Show the form for editing the specified resource.
-     * @param  Customer  $customer
+     * Display the specified resource.
+     * @param  Integer $id
      * @return Response
      */
-    public function edit(Customer $customer)
+    public function show(int $id)
     {
-        return view('app.customer.create', [
-            'title' => 'Editar usuario', 'customer' => $customer
-        ]);
+        $customer = $this->customer->find($id);
+        if ($customer === null) {
+            return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
+        }
+
+        return response()->json($customer, 200);
     }
+
 
     /**
      * Update the specified resource in storage.
-     * @return Response  $request
      * @param  Customer  $customer
+     * @param  Request  $request
      * @return Response
      */
     public function update(Request $request, Customer $customer)
     {
-        $customer->update($request->all());
-        return redirect()->route('customer.index', ['customers' => $customer]);
+        if ($request->method() === 'PATCH') {
+            $customer->update($request->only($this->customer->fillable));
+        } else {
+            $request->validate($this->customer->rules(), $this->customer->feedback());
+            $customer->update($request->all());
+        }
+        return response()->json($customer, 200, ['msg' => 'Usuário(a) atualizado com sucesso']);
     }
 
     /**
      * Remove the specified resource from storage.
-     * @param  Customer  $customer
+     * @param Integer  $id
      * @return Response
      */
-    public function destroy(Customer $customer)
+    public function destroy(int $id)
     {
+        $customer = $this->customer->find($id);
+        if ($customer === null) {
+            return response()->json(['erro' => 'Impossível realizar a exclusão. O recurso solicitado não existe'], 404);
+        }
+
+        $associated = $customer->rentals()->exists();
+        if ($associated) {
+            return response()->json(['erro' => 'Impossível realizar a exclusão. O cliente está associado a alugueis.'], 400);
+        }
+
         $customer->delete();
-        return redirect()->route('customer.index');
+        return response()->json(['msg' => 'Recurso excluído com sucesso'], 200);
     }
 }
