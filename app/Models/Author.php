@@ -32,4 +32,8 @@ class Author extends Model
            'name.min' => 'O campo nome deve ter no mínimo 3 caracteres' 
        ];
    }
+
+   public function books(){
+       return $this->hasMany(Book::class);
+   }
 }

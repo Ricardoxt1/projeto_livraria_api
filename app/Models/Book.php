@@ -10,7 +10,7 @@ class Book extends Model
 {
     use HasFactory;
     protected $table = 'books';
-    protected $fillable = ['author_id', 'publisher_id', 'library_id', 'titule', 'page', 'realese_date'];
+    protected $fillable = ['author_id', 'publisher_id', 'library_id', 'titule', 'page', 'realese_date', 'image'];
 
     public function rules(){
         return [
@@ -60,5 +60,9 @@ class Book extends Model
     public function library()
     {
         return $this->belongsTo(Library::class);
+    }
+
+    public function rentals(){
+        return $this->hasMany(Rental::class);
     }
 }

@@ -47,4 +47,9 @@ class Employee extends Model
     {
         return $this->belongsTo(Library::class);
     }
+
+    public function Rental (){
+        return $this->hasMany(Rental::class);
+    }
+
 }

@@ -33,5 +33,9 @@ class Customer extends Model
             'email.email' => 'O campo email deve ser um email válido'
         ];
     }
+
+    public function rentals(){
+        return $this->hasMany(Rental::class);
+    }
     
 }

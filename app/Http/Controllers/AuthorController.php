@@ -2,23 +2,33 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Rental;
 use App\Models\Author;
+use App\Models\Book;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class AuthorController extends Controller
 {
+    private $author;
+
+    /**
+     * Constructs a new instance of the class.
+     * @param Author $author The author object.
+     */
+    public function __construct(Author $author)
+    {
+        $this->author = $author;
+    }
+
     /**
      * Display a listing of the resource.
-     * @param Author $author
      * @return Response
      */
-    public function index(Author $author)
+    public function index()
     {
-        $authors = $author->all();
-        return view('app.author.index', [
-            'title' => 'Listagem de autores', 'authors' => $authors
-        ]);
+        $authors = $this->author->all();
+        return response()->json($authors, 200, ['msg' => 'Recurso listado com sucesso']);
     }
 
     /**
@@ -41,8 +51,26 @@ class AuthorController extends Controller
      */
     public function store(Request $request, Author $author)
     {
-        $author->create($request->all());
-        return redirect()->route('author.index');
+        $request->validate($this->author->rules(), $this->author->feedback());
+        $author = $this->author->create($request->all());
+
+        return response()->json($author, 201);
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  Integer $id
+     * @return Response
+     */
+    public function show($id)
+    {
+        $author = $this->author->find($id);
+        if ($author === null) {
+            return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
+        }
+
+        return response()->json($author, 200);
     }
 
     /**
@@ -65,19 +93,37 @@ class AuthorController extends Controller
      */
     public function update(Request $request, Author $author)
     {
-        $author->update($request->all());
-        return redirect()->route('author.index', ['authors' => $author]);
+        $author->update([
+            'name' => $request->name
+        ]);
+
+        return response()->json($author, 200, ['msg' => 'Autor(a) atualizado com sucesso']);
     }
 
     /**
      * Remove the specified resource from storage.
-     *
-     * @param Author  $author
+     * @param Book $book
+     * @param Rental $rental
+     * @param Integer  $id
      * @return Response
      */
-    public function destroy(Author $author)
+    public function destroy($id)
     {
+        $author = $this->author->find($id);
+
+        if ($author === null) {
+            return response()->json(['erro' => 'Impossível realizar a exclusão. O recurso solicitado não existe'], 404);
+        }
+
+        // Check if the author is associated with books or rentals
+        $associated = $author->books()->exists();
+
+        if ($associated) {
+            return response()->json(['erro' => 'Impossível realizar a exclusão. O autor está associado a livros ou aluguéis.'], 400);
+        }
+
+
         $author->delete();
-        return redirect()->route('author.index');
+        return response()->json(['msg' => 'Recurso excluído com sucesso'], 200);
     }
 }
