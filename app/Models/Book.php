@@ -12,6 +12,29 @@ class Book extends Model
     protected $table = 'books';
     protected $fillable = ['author_id', 'publisher_id', 'library_id', 'titule', 'page', 'realese_date'];
 
+    public function rules(){
+        return [
+            'author_id' => 'required|exists:authors,id',
+            'publisher_id' => 'required|exists:publishers,id',
+            'library_id' => 'required|exists:library,id',
+            'titule' => 'required|min:3',
+            'page' => 'required|integer',
+            'realese_date' => 'required|year',
+        ];
+    }
+
+    public function feedback(){
+        return [
+            'required' =>  'O campo :attribute é obrigatório',
+            'author_id.exists' => 'O autor informado não existe',
+            'publisher_id.exists' => 'O editora informada não existe',
+            'library_id.exists' => 'A biblioteca informada não existe',
+            'titule.min' => 'O campo título deve ter no mínimo 3 caracteres',
+            'page.integer' => 'O campo página deve ser um número inteiro',
+            'realese_date.year' => 'O campo data de publicação deve ser um ano válido',
+        ];
+    }
+
     /**
      * Retrieve the author of this book.
      * @return BelongsTo

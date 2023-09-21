@@ -12,6 +12,33 @@ class Employee extends Model
     protected $table = 'employees';
     protected $fillable = ['library_id', 'name', 'pis', 'office', 'departament'];
 
+        /**
+     * This function returns the validation rules for the form.
+     * @return array The validation rules.
+     */
+    public function rules(){
+        return [
+            'library_id' => 'required|exists:library,id',
+            'name' => 'required|min:3',
+            'pis' => 'required|integer|min:1|max:14',
+            'office' => 'required',
+            'departament' => 'required'          
+        ];
+    }
+
+   /**
+    * Returns an array of feedback messages.
+    * @return array
+    */
+   public function feedback(){
+       return [
+           'required' =>  'O campo :attribute é obrigatório',
+           'library_id.exists' => 'A biblioteca informada não existe',
+           'name.min' => 'O campo nome deve ter no mínimo 3 caracteres',
+           'pis.digits' => 'O campo pis deve ter no mínimo 11 caracteres',
+       ];
+   }
+
     /**
      * Retrieve the library where this employee is located.
      * @return BelongsTo
