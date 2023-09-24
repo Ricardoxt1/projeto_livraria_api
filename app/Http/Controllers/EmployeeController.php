@@ -26,7 +26,7 @@ class EmployeeController extends Controller
      */
     public function index()
     {
-        $employees = $this->employee->all();
+        $employees = $this->employee->with('library')->get();
         return response()->json($employees, 200, ['msg' => 'Recurso listado com sucesso']);
     }
 
@@ -50,7 +50,7 @@ class EmployeeController extends Controller
      */
     public function show(int $id)
     {
-        $employee = $this->employee->find($id);
+        $employee = $this->employee->with('library')->find($id);
         if ($employee === null) {
             return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
         }

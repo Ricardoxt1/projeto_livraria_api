@@ -26,7 +26,7 @@ class CustomerController extends Controller
      */
     public function index()
     {
-        $customers = $this->customer->all();
+        $customers = $this->customer->with('rentals')->get();
         return response()->json($customers, 200, ['msg' => 'Recurso listado com sucesso']);
     }
 
@@ -50,7 +50,7 @@ class CustomerController extends Controller
      */
     public function show(int $id)
     {
-        $customer = $this->customer->find($id);
+        $customer = $this->customer->with('rentals')->find($id);
         if ($customer === null) {
             return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
         }

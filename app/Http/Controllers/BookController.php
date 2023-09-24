@@ -27,7 +27,7 @@ class BookController extends Controller
      */
     public function index()
     {
-        $book = $this->book->all();
+        $book = $this->book->with('author', 'publisher', 'library')->get();
         return response()->json($book, 200, ['msg' => 'Recurso listado com sucesso.']);
     }
 
@@ -54,14 +54,14 @@ class BookController extends Controller
         return response()->json($book, 201, ['msg' => 'Recurso criado com sucesso.']);
     }
 
-        /**
+    /**
      * Display the specified resource.
      * @param  Integer $id
      * @return Response
      */
     public function show(int $id)
     {
-        $book = $this->book->find($id);
+        $book = $this->book->with('author', 'publisher', 'library')->find($id);
         if ($book === null) {
             return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
         }
@@ -84,24 +84,24 @@ class BookController extends Controller
             return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
         }
 
-        
+
         if ($request->method() === 'PATCH') {
             $book->update($request->only($this->book->fillable));
         } else {
             $request->validate($this->book->rules(), $this->book->feedback());
             $book->update($request->all());
         }
-        
+
         if ($request->file('image')) {
             $storage::disk('public')->delete($book->image);
         }
-        
+
         $image = $request->file('image');
         $image_urn = $image->store('books', 'public');
 
-        $book->update([
-            'image' => $image_urn
-        ]);
+        $book->fill($request->all());
+        $book->image = $image_urn;
+        $book->save();
 
         return response()->json($book, 200, ['msg' => 'Recurso atualizado com sucesso.']);
     }
@@ -128,6 +128,7 @@ class BookController extends Controller
 
         $storage::disk('public')->delete($book->image);
         $book->delete();
+        
         return response()->json(['msg' => 'Recurso excluído com sucesso.'], 200);
     }
 }

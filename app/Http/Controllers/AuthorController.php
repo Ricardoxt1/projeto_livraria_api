@@ -25,7 +25,7 @@ class AuthorController extends Controller
      */
     public function index()
     {
-        $authors = $this->author->all();
+        $authors = $this->author->with('books')->get();
         return response()->json($authors, 200, ['msg' => 'Recurso listado com sucesso']);
     }
 
@@ -51,7 +51,7 @@ class AuthorController extends Controller
      */
     public function show(int $id)
     {
-        $author = $this->author->find($id);
+        $author = $this->author->with('books')->find($id);
         if ($author === null) {
             return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
         }
@@ -68,12 +68,15 @@ class AuthorController extends Controller
      */
     public function update(Request $request, Author $author)
     {
+
         if ($request->method() === 'PATCH') {
             $author->update($request->only($this->author->fillable));
         } else {
             $request->validate($this->author->rules(), $this->author->feedback());
             $author->update($request->all());
         }
+
+        
         
         return response()->json($author, 200, ['msg' => 'Autor(a) atualizado com sucesso']);
     }

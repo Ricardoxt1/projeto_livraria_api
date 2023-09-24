@@ -25,7 +25,7 @@ class PublisherController extends Controller
      */
     public function index()
     {
-        $publishers = $this->publisher->all();
+        $publishers = $this->publisher->with('books')->get();
         return response()->json($publishers, 200, ['msg' => 'Recurso listado com sucesso']);
     }
 
@@ -48,7 +48,7 @@ class PublisherController extends Controller
      */
     public function show($id)
     {
-        $publishers = $this->publisher->find($id);
+        $publishers = $this->publisher->with('books')->find($id);
         if ($publishers === null) {
             return response()->json(['erro' => 'Recurso pesquisado não existe'], 404);
         }

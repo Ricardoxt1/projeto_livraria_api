@@ -26,7 +26,7 @@ class RentalController extends Controller
      */
     public function index()
     {
-        $rentals = $this->rental->all();
+        $rentals = $this->rental->with('book', 'customer', 'employee')->get();
         return response()->json($rentals, 200, ['msg' => 'Recurso listado com sucesso.']);
     }
 
@@ -79,7 +79,7 @@ class RentalController extends Controller
             $request->validate($this->rental->rules(), $this->rental->feedback());
             $rental->update($request->all());
         }
-        
+
         return response()->json($rental, 200, ['msg' => 'Recurso atualizado com sucesso.']);
     }
 
