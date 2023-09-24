@@ -8,7 +8,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\PublisherController;
 use App\Http\Controllers\RentalController;
-
+use App\Http\Controllers\RegisterController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -41,3 +41,7 @@ Route::apiResource('/publisher', PublisherController::class);
 
 // Define routes for the 'rental' apiResource
 Route::apiResource('/rental', RentalController::class);
+
+// Define routes for the 'register' apiResource
+Route::apiResource('/register', RegisterController::class);
+

@@ -15,3 +15,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('autenticate:padrao')->prefix('/app')->group(function () {
 });
+
+Route::get('/login/{erro?},{sucess?}', [\App\Http\Controllers\LoginController::class, 'index'])->name('site.login');
+Route::post('/login', [\App\Http\Controllers\LoginController::class, 'authenticate'])->name('site.login');
+
+
